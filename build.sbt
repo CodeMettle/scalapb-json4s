@@ -1,8 +1,8 @@
 import ReleaseTransformations._
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.11.7"
 
-crossScalaVersions := Seq("2.10.5", "2.11.8", "2.12.0")
+crossScalaVersions := Seq("2.10.5", "2.11.7")
 
 organization in ThisBuild := "com.trueaccord.scalapb"
 
@@ -10,9 +10,28 @@ name in ThisBuild := "scalapb-json4s"
 
 scalacOptions in ThisBuild ++= {
   CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, v)) if v <= 11 => List("-target:jvm-1.7")
+    case Some((2, v)) if v <= 11 => List("-target:jvm-1.6")
     case _ => Nil
   }
+}
+
+resolvers ++= Seq(
+  "cm" at "http://maven.codemettle.com/repository/internal",
+  "cm/snaps" at "http://maven.codemettle.com/repository/snapshots"
+)
+
+publishMavenStyle in ThisBuild := true
+
+credentials += {
+  def file = "credentials-" + (if (isSnapshot.value) "snapshots" else "internal")
+
+  Credentials(Path.userHome / ".m2" / file)
+}
+
+publishTo := {
+  def path = "/repository/" + (if (isSnapshot.value) "snapshots" else "internal")
+
+  Some("CodeMettle Maven" at s"http://maven.codemettle.com$path")
 }
 
 releaseCrossBuild := true
@@ -34,11 +53,12 @@ releaseProcess := Seq[ReleaseStep](
   ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true)
 )
 
-val scalaPbVersion = "0.5.47"
+val scalaPbVersion = "0.5.47-JAVA6"
 
 libraryDependencies ++= Seq(
   "com.trueaccord.scalapb" %% "scalapb-runtime" % scalaPbVersion,
-  "org.json4s" %% "json4s-jackson" % "3.5.0",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.7.9",
+  "org.json4s" %% "json4s-jackson" % "3.5.0" exclude("com.fasterxml.jackson.core", "jackson-databind"),
   "org.scalatest" %% "scalatest" % "3.0.0" % "test",
   "com.google.protobuf" % "protobuf-java-util" % "3.1.0" % "test",
   "com.google.protobuf" % "protobuf-java" % "3.1.0" % "protobuf"
